@@ -9,6 +9,8 @@ var screen = blessed.screen({
   autoPadding : true
 });
  
+var activeFm, inactiveFm;
+
 screen.title = 'Midday Commander';
  
 let background = blessed.box({
@@ -22,19 +24,8 @@ let background = blessed.box({
   }
 });
 
-const homedir = require('os').homedir();
-const filesAndDirs = fsAPI.getFilesForDir(homedir);
-
-let leftPanel = panelsAPI.createLeftPanel();
-let rightPanel = panelsAPI.createRightPanel();
-
-let leftNamePanel = panelsAPI.createLeftNamePanel(filesAndDirs);
-let leftSizePanel = panelsAPI.createLeftSizePanel();
-let leftModifiedPanel = panelsAPI.createLeftModifiedPanel();
-
-let rightNamePanel = panelsAPI.createRightNamePanel(filesAndDirs);
-let rightSizePanel = panelsAPI.createRightSizePanel();
-let rightModifiedPanel = panelsAPI.createRightModifiedPanel();
+let leftFm = panelsAPI.createLeftFM(screen)
+let rightFm = panelsAPI.createRightFm(screen)
 
 let buttons = buttonsAPI.createButtons();
 buttons.forEach(button => { 
@@ -42,23 +33,35 @@ buttons.forEach(button => {
 });
 
 screen.append(background);
-screen.append(leftPanel);
 
-screen.append(leftNamePanel);
-screen.append(leftSizePanel);
-screen.append(leftModifiedPanel);
-
-screen.append(rightPanel);
-screen.append(rightNamePanel);
-screen.append(rightSizePanel);
-screen.append(rightModifiedPanel);
-
+screen.append(leftFm)
+screen.append(rightFm)
 
 // Quit on Escape, q, or Control-C.
 screen.key(['q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
+
+screen.key(['tab'], function(ch, key) {
+  var tempFm = activeFm
+  activeFm = inactiveFm
+  inactiveFm = tempFm
+  activeFm.focus()
+  panelsAPI.enableSelector(activeFm)
+  panelsAPI.disableSelector(inactiveFm)
+  activeFm.refresh()
+  inactiveFm.refresh()
+});
+
 // Focus our element.
-leftPanel.focus();
+activeFm = leftFm;
+inactiveFm = rightFm;
+
+activeFm.focus()
+
+panelsAPI.disableSelector(inactiveFm)
+activeFm.refresh()
+inactiveFm.refresh()
+
 // Render the screen.
 screen.render();
