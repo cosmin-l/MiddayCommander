@@ -1,7 +1,7 @@
-var blessed = require('blessed');
+var FileManager = require('./filemanager');
 
 const createLeftFM = (screen) => {
-    let leftFm = blessed.filemanager({
+    let leftFm = FileManager({
         parent: screen,
         border: 'line',
         style: {
@@ -33,7 +33,7 @@ const createLeftFM = (screen) => {
 }
 
 const createRightFm = (screen) =>{
-    let rightFm = blessed.filemanager({
+    let rightFm = FileManager({
         parent: screen,
         border: 'line',
         style: {
