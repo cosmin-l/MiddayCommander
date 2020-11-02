@@ -23,9 +23,14 @@ let background = blessed.box({
 
 let leftPanel = panelsAPI.createLeftPanel();
 let rightPanel = panelsAPI.createRightPanel();
+
 let leftNamePanel = panelsAPI.createLeftNamePanel();
 let leftSizePanel = panelsAPI.createLeftSizePanel();
 let leftModifiedPanel = panelsAPI.createLeftModifiedPanel();
+
+let rightNamePanel = panelsAPI.createRightNamePanel();
+let rightSizePanel = panelsAPI.createRightSizePanel();
+let rightModifiedPanel = panelsAPI.createRightModifiedPanel();
 
 let buttons = buttonsAPI.createButtons();
 buttons.forEach(button => { 
@@ -34,11 +39,15 @@ buttons.forEach(button => {
 
 screen.append(background);
 screen.append(leftPanel);
+
 screen.append(leftNamePanel);
 screen.append(leftSizePanel);
 screen.append(leftModifiedPanel);
 
 screen.append(rightPanel);
+screen.append(rightNamePanel);
+screen.append(rightSizePanel);
+screen.append(rightModifiedPanel);
 
 
 // Quit on Escape, q, or Control-C.

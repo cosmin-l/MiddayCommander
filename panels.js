@@ -93,10 +93,62 @@ const createRightPanel = () =>{
     return rightPanel;
 }
 
+const createRightNamePanel = (content) => {
+    let rightNamePanel = blessed.box({
+        top: '5%',
+        left: '50%+2',
+        width: '30%',
+        height: '100%-5',
+        content: "{center}{bold}Name{/bold}{/center}",
+        tags: true,
+        style: {
+          fg: 'white',
+          bg: 'green',
+        }
+      });
+    return rightNamePanel;
+}
+
+
+const createRightSizePanel = (content) => {
+    let rightSizePanel = blessed.box({
+        top: '5%',
+        left: '80%+1',
+        width: '10%',
+        height: '100%-5',
+        content: "{center}{bold}Size{/bold}{/center}",
+        tags: true,
+        style: {
+          fg: 'white',
+          bg: 'lightgreen',
+        }
+      });
+    return rightSizePanel;
+}
+
+const createRightModifiedPanel = (content) => {
+    let rightModifiedPanel = blessed.box({
+        top: '5%',
+        left: '90%',
+        width: '10%',
+        height: '100%-5',
+        content: "{center}{bold}Modified{/bold}{/center}",
+        tags: true,
+        style: {
+          fg: 'white',
+          bg: 'blue',
+        }
+      });
+    return rightModifiedPanel;
+}
+
 exports.createLeftPanel = createLeftPanel;
 exports.createLeftNamePanel = createLeftNamePanel;
 exports.createLeftSizePanel = createLeftSizePanel;
 exports.createLeftModifiedPanel = createLeftModifiedPanel;
 
 exports.createRightPanel = createRightPanel;
+exports.createRightNamePanel = createRightNamePanel;
+exports.createRightSizePanel = createRightSizePanel;
+exports.createRightModifiedPanel = createRightModifiedPanel;
 
