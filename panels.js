@@ -59,7 +59,7 @@ const createLeftModifiedPanel = (content) => {
     let leftModifiedPanel = blessed.box({
         top: '5%',
         left: '40%',
-        width: '10%',
+        width: '10%-1',
         height: '100%-5',
         content: "{center}{yellow-fg}{bold}Modified{/}",
         tags: true,
@@ -130,7 +130,7 @@ const createRightModifiedPanel = (content) => {
     let rightModifiedPanel = blessed.box({
         top: '5%',
         left: '90%',
-        width: '10%',
+        width: '10%-1',
         height: '100%-5',
         content: "{center}{yellow-fg}{bold}Modified{/}",
         tags: true,
