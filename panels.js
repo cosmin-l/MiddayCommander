@@ -14,8 +14,6 @@ const createLeftPanel = () =>{
           fg: 'white',
           bg: 'blue',
           border: {
-            // fg: '#f0f0f0',
-            // bg: 4
             fg: 'white',
             bg: 'blue'
           }
@@ -25,12 +23,23 @@ const createLeftPanel = () =>{
 }
 
 const createLeftNamePanel = (content) => {
+    let files = content.files;
+    let dirs = content.dirs;
+    let panelContent = '{center}{yellow-fg}Name{/}\n';
+    panelContent += '{left}/..{/}\n';
+    dirs.forEach(element => {
+        panelContent += '{left}/' + element +'{/}\n';
+    });
+    files.forEach(element => {
+        panelContent += '{left}' + element +'{/}\n';
+    });
+
     let leftNamePanel = blessed.box({
         top: '5%',
         left: 'left+1',
         width: '30%',
         height: '100%-5',
-        content: "{center}{yellow-fg}Name{/}",
+        content: panelContent,
         tags: true,
         style: {
           fg: 'white',
@@ -96,12 +105,23 @@ const createRightPanel = () =>{
 }
 
 const createRightNamePanel = (content) => {
+    let files = content.files;
+    let dirs = content.dirs;
+    let panelContent = '{center}{yellow-fg}Name{/}\n';
+    panelContent += '{left}/..{/}\n';
+    dirs.forEach(element => {
+        panelContent += '{left}/' + element +'{/}\n';
+    });
+    files.forEach(element => {
+        panelContent += '{left}' + element +'{/}\n';
+    });
+
     let rightNamePanel = blessed.box({
         top: '5%',
         left: '50%+2',
         width: '30%',
         height: '100%-5',
-        content: "{center}{yellow-fg}Name{/}",
+        content: panelContent,
         tags: true,
         style: {
           fg: 'white',

@@ -1,6 +1,7 @@
 const blessed = require('blessed');
 const buttonsAPI = require('./buttons');
 const panelsAPI = require('./panels');
+const fsAPI = require('./filesystem');
  
 // Create a screen object.
 var screen = blessed.screen({
@@ -21,14 +22,17 @@ let background = blessed.box({
   }
 });
 
+const homedir = require('os').homedir();
+const filesAndDirs = fsAPI.getFilesForDir(homedir);
+
 let leftPanel = panelsAPI.createLeftPanel();
 let rightPanel = panelsAPI.createRightPanel();
 
-let leftNamePanel = panelsAPI.createLeftNamePanel();
+let leftNamePanel = panelsAPI.createLeftNamePanel(filesAndDirs);
 let leftSizePanel = panelsAPI.createLeftSizePanel();
 let leftModifiedPanel = panelsAPI.createLeftModifiedPanel();
 
-let rightNamePanel = panelsAPI.createRightNamePanel();
+let rightNamePanel = panelsAPI.createRightNamePanel(filesAndDirs);
 let rightSizePanel = panelsAPI.createRightSizePanel();
 let rightModifiedPanel = panelsAPI.createRightModifiedPanel();
 
