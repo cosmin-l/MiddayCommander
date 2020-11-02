@@ -14,8 +14,10 @@ const createLeftPanel = () =>{
           fg: 'white',
           bg: 'blue',
           border: {
-            fg: '#f0f0f0',
-            bg: 4
+            // fg: '#f0f0f0',
+            // bg: 4
+            fg: 'white',
+            bg: 'blue'
           }
         }
       });
@@ -28,7 +30,7 @@ const createLeftNamePanel = (content) => {
         left: 'left+1',
         width: '30%',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Name{/}",
+        content: "{center}{yellow-fg}Name{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -45,7 +47,7 @@ const createLeftSizePanel = (content) => {
         left: '30%',
         width: '10%',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Size{/}",
+        content: "{center}{yellow-fg}Size{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -61,7 +63,7 @@ const createLeftModifiedPanel = (content) => {
         left: '40%',
         width: '10%-1',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Modified{/}",
+        content: "{center}{yellow-fg}Modified{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -85,8 +87,8 @@ const createRightPanel = () =>{
           fg: 'white',
           bg: 'blue',
           border: {
-            fg: '#f0f0f0',
-            bg: 4
+            fg: 'white',
+            bg: 'blue'
           }
         }
       });
@@ -99,7 +101,7 @@ const createRightNamePanel = (content) => {
         left: '50%+2',
         width: '30%',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Name{/}",
+        content: "{center}{yellow-fg}Name{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -116,7 +118,7 @@ const createRightSizePanel = (content) => {
         left: '80%+1',
         width: '10%',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Size{/}",
+        content: "{center}{yellow-fg}Size{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -132,7 +134,7 @@ const createRightModifiedPanel = (content) => {
         left: '90%',
         width: '10%-1',
         height: '100%-5',
-        content: "{center}{yellow-fg}{bold}Modified{/}",
+        content: "{center}{yellow-fg}Modified{/}",
         tags: true,
         style: {
           fg: 'white',
