@@ -39,7 +39,7 @@ const addFooterButton = (text, pos) => {
       tags: true,
       style: {
         fg: 'white',
-        bg: 'lightblue',
+        bg: 'green',
         border: {
           fg: '#f0f0f0'
         },

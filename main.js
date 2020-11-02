@@ -17,7 +17,7 @@ let background = blessed.box({
   height: '96%',
   style: {
     fg: 'white',
-    bg: 'lightblue',
+    bg: 'blue',
   }
 });
 

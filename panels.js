@@ -12,10 +12,10 @@ const createLeftPanel = () =>{
         },
         style: {
           fg: 'white',
-          bg: 'lightblue',
+          bg: 'blue',
           border: {
             fg: '#f0f0f0',
-            bg: 12
+            bg: 4
           }
         }
       });
@@ -28,11 +28,11 @@ const createLeftNamePanel = (content) => {
         left: 'left+1',
         width: '30%',
         height: '100%-5',
-        content: "{center}{bold}Name{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Name{/}",
         tags: true,
         style: {
           fg: 'white',
-          bg: 'green',
+          bg: 'blue',
         }
       });
     return leftNamePanel;
@@ -45,11 +45,11 @@ const createLeftSizePanel = (content) => {
         left: '30%',
         width: '10%',
         height: '100%-5',
-        content: "{center}{bold}Size{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Size{/}",
         tags: true,
         style: {
           fg: 'white',
-          bg: 'lightgreen',
+          bg: 'blue',
         }
       });
     return leftSizePanel;
@@ -61,7 +61,7 @@ const createLeftModifiedPanel = (content) => {
         left: '40%',
         width: '10%',
         height: '100%-5',
-        content: "{center}{bold}Modified{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Modified{/}",
         tags: true,
         style: {
           fg: 'white',
@@ -83,10 +83,10 @@ const createRightPanel = () =>{
         },
         style: {
           fg: 'white',
-          bg: 'lightblue',
+          bg: 'blue',
           border: {
             fg: '#f0f0f0',
-            bg: 12
+            bg: 4
           }
         }
       });
@@ -99,11 +99,11 @@ const createRightNamePanel = (content) => {
         left: '50%+2',
         width: '30%',
         height: '100%-5',
-        content: "{center}{bold}Name{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Name{/}",
         tags: true,
         style: {
           fg: 'white',
-          bg: 'green',
+          bg: 'blue',
         }
       });
     return rightNamePanel;
@@ -116,11 +116,11 @@ const createRightSizePanel = (content) => {
         left: '80%+1',
         width: '10%',
         height: '100%-5',
-        content: "{center}{bold}Size{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Size{/}",
         tags: true,
         style: {
           fg: 'white',
-          bg: 'lightgreen',
+          bg: 'blue',
         }
       });
     return rightSizePanel;
@@ -132,7 +132,7 @@ const createRightModifiedPanel = (content) => {
         left: '90%',
         width: '10%',
         height: '100%-5',
-        content: "{center}{bold}Modified{/bold}{/center}",
+        content: "{center}{yellow-fg}{bold}Modified{/}",
         tags: true,
         style: {
           fg: 'white',
