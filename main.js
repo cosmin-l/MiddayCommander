@@ -1,6 +1,6 @@
 const blessed = require('blessed');
 const buttonsAPI = require('./buttons');
- 
+const panelsAPI = require('./panels');
  
 // Create a screen object.
 var screen = blessed.screen({
@@ -21,45 +21,11 @@ let background = blessed.box({
   }
 });
 
-let leftPanel = blessed.box({
-  top: '3%',
-  left: 'left',
-  width: '50%',
-  height: '100%-3',
-  content: 'Hello {bold}world{/bold}!',
-  tags: true,
-  border: {
-    type: 'line'
-  },
-  style: {
-    fg: 'white',
-    bg: 'lightblue',
-    border: {
-      fg: '#f0f0f0',
-      bg: 12
-    }
-  }
-});
-
-let rightPanel = blessed.box({
-  top: '3%',
-  right: '0',
-  width: '50%',
-  height: '100%-3',
-  content: 'Hello {bold}world{/bold}!',
-  tags: true,
-  border: {
-    type: 'line'
-  },
-  style: {
-    fg: 'white',
-    bg: 'lightblue',
-    border: {
-      fg: '#f0f0f0',
-      bg: 12
-    }
-  }
-});
+let leftPanel = panelsAPI.createLeftPanel();
+let rightPanel = panelsAPI.createRightPanel();
+let leftNamePanel = panelsAPI.createLeftNamePanel();
+let leftSizePanel = panelsAPI.createLeftSizePanel();
+let leftModifiedPanel = panelsAPI.createLeftModifiedPanel();
 
 let buttons = buttonsAPI.createButtons();
 buttons.forEach(button => { 
@@ -68,6 +34,10 @@ buttons.forEach(button => {
 
 screen.append(background);
 screen.append(leftPanel);
+screen.append(leftNamePanel);
+screen.append(leftSizePanel);
+screen.append(leftModifiedPanel);
+
 screen.append(rightPanel);
 
 
@@ -75,9 +45,7 @@ screen.append(rightPanel);
 screen.key(['q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
- 
 // Focus our element.
 leftPanel.focus();
- 
 // Render the screen.
 screen.render();
