@@ -9,7 +9,7 @@ var screen = blessed.screen({
   autoPadding : true
 });
  
-var activeFm, inactiveFm;
+var activePanel, inactivePanel;
 
 screen.title = 'Midday Commander';
  
@@ -43,25 +43,25 @@ screen.key(['q', 'C-c'], function(ch, key) {
 });
 
 screen.key(['tab'], function(ch, key) {
-  var tempFm = activeFm
-  activeFm = inactiveFm
-  inactiveFm = tempFm
-  activeFm.focus()
-  panelsAPI.enableSelector(activeFm)
-  panelsAPI.disableSelector(inactiveFm)
-  activeFm.refresh()
-  inactiveFm.refresh()
+  var tempPanel = activePanel
+  activePanel = inactivePanel
+  inactivePanel = tempPanel
+  panelsAPI.enableSelector(activePanel)
+  panelsAPI.disableSelector(inactivePanel)
+  activePanel.focus()
+  screen.render()//must-do, makes highlight refresh
+
 });
 
 // Focus our element.
-activeFm = leftFm;
-inactiveFm = rightFm;
+activePanel = leftFm;
+inactivePanel = rightFm;
 
-activeFm.focus()
+activePanel.focus()
 
-panelsAPI.disableSelector(inactiveFm)
-activeFm.refresh()
-inactiveFm.refresh()
+panelsAPI.disableSelector(inactivePanel)
+activePanel.refresh()
+inactivePanel.refresh()
 
 // Render the screen.
 screen.render();
