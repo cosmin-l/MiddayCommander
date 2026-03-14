@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gradle wrapper:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(powershell:*)",
+      "Bash(/c/Temp/gradle-8.14/gradle-8.14/bin/gradle wrapper:*)",
+      "Bash(/c/Temp/gradle-8.14/gradle-8.14/bin/gradle dependencies:*)",
+      "Bash(/c/Temp/gradle-9.0/gradle-9.0.0/bin/gradle wrapper:*)",
+      "Bash(git:*)"
+    ]
+  }
+}
