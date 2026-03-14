@@ -852,39 +852,57 @@ public class Main {
                           int x, int w, int visibleRows, boolean active, int H, Theme t) {
         if (w <= 0) return;
 
+        final int SIZE_W = 5; // "<DIR>" and fmtSize() are always 5 chars
+        int nameW = Math.max(1, w - SIZE_W - 2);
+        int sepX  = x + nameW;
+
         // File list (rows 2..H-5)
         for (int i = 0; i < visibleRows; i++) {
             int idx = i + panel.scroll;
             int row = 2 + i;
 
+            // Separator runs through every row
+            g.setForegroundColor(t.border());
+            g.setBackgroundColor(TextColor.ANSI.DEFAULT);
+            g.putString(sepX, row, "│");
+
             if (idx >= panel.entries.size()) {
                 g.setForegroundColor(TextColor.ANSI.DEFAULT);
                 g.setBackgroundColor(TextColor.ANSI.DEFAULT);
-                g.putString(x, row, pad("", w));
+                g.putString(x, row, pad("", nameW));
+                g.putString(sepX + 1, row, pad("", SIZE_W));
                 continue;
             }
 
             FileEntry e        = panel.entries.get(idx);
             boolean   selected = (idx == panel.cursor);
 
+            TextColor fg, bg;
             if (selected && active) {
-                g.setForegroundColor(t.accentFg());
-                g.setBackgroundColor(t.accent());
+                fg = t.accentFg(); bg = t.accent();
             } else if (selected) {
-                g.setForegroundColor(TextColor.ANSI.BLACK);
-                g.setBackgroundColor(TextColor.ANSI.WHITE);
+                fg = TextColor.ANSI.BLACK; bg = TextColor.ANSI.WHITE;
             } else if (e.isDirectory()) {
-                g.setForegroundColor(t.dirFg());
-                g.setBackgroundColor(TextColor.ANSI.DEFAULT);
+                fg = t.dirFg(); bg = TextColor.ANSI.DEFAULT;
             } else {
-                g.setForegroundColor(TextColor.ANSI.WHITE);
-                g.setBackgroundColor(TextColor.ANSI.DEFAULT);
+                fg = TextColor.ANSI.WHITE; bg = TextColor.ANSI.DEFAULT;
             }
 
+            g.setForegroundColor(fg);
+            g.setBackgroundColor(bg);
+
             String sizeCol = e.isDirectory() ? "<DIR>" : fmtSize(e.size());
-            int    nameW   = Math.max(1, w - sizeCol.length() - 1);
             String display = e.isDirectory() ? "/" + e.name() : e.name();
-            g.putString(x, row, pad(trunc(" " + display, nameW), nameW) + sizeCol);
+            g.putString(x, row, pad(trunc(" " + display, nameW), nameW));
+            g.putString(sepX + 1, row, sizeCol);
+        }
+
+        // Column separator connectors at panel borders
+        g.setForegroundColor(t.border());
+        g.setBackgroundColor(TextColor.ANSI.DEFAULT);
+        if (w > SIZE_W + 2) {
+            g.putString(sepX, 1,     "╤"); // top border: ═ → ╤
+            g.putString(sepX, H - 4, "╧"); // middle border: ═ → ╧
         }
 
         // Path row (H-3, inside the 1-row sub-box)
