@@ -18,7 +18,7 @@ import java.util.List;
 
 public class Main {
 
-    record FileEntry(String name, boolean isDirectory, long size) {}
+    record FileEntry(String name, boolean isDirectory, long size, long modified) {}
 
     static class Panel {
         Path path;
@@ -33,7 +33,7 @@ public class Main {
 
         void load() {
             entries.clear();
-            entries.add(new FileEntry("..", true, 0));
+            entries.add(new FileEntry("..", true, 0, 0));
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(path)) {
                 List<FileEntry> dirs  = new ArrayList<>();
                 List<FileEntry> files = new ArrayList<>();
@@ -41,8 +41,9 @@ public class Main {
                     try {
                         BasicFileAttributes a = Files.readAttributes(p, BasicFileAttributes.class);
                         String name = p.getFileName().toString();
-                        if (a.isDirectory()) dirs.add(new FileEntry(name, true, 0));
-                        else                 files.add(new FileEntry(name, false, a.size()));
+                        long   mod  = a.lastModifiedTime().toMillis();
+                        if (a.isDirectory()) dirs.add(new FileEntry(name, true, 0, mod));
+                        else                 files.add(new FileEntry(name, false, a.size(), mod));
                     } catch (IOException ignored) {}
                 }
                 dirs.sort(Comparator.comparing(FileEntry::name));
@@ -90,6 +91,7 @@ public class Main {
     record Theme(String name, TextColor accent, TextColor accentFg, TextColor border, TextColor dirFg) {}
 
     static final Theme[] THEMES = {
+        new Theme("Norton Commander",TextColor.ANSI.CYAN,    TextColor.ANSI.BLACK, TextColor.ANSI.CYAN,    TextColor.ANSI.CYAN),
         new Theme("Midnight Blue",  TextColor.ANSI.BLUE,    TextColor.ANSI.WHITE, TextColor.ANSI.WHITE,   TextColor.ANSI.CYAN),
         new Theme("Classic MC",     TextColor.ANSI.CYAN,    TextColor.ANSI.BLACK, TextColor.ANSI.WHITE,   TextColor.ANSI.CYAN),
         new Theme("Forest Green",   TextColor.ANSI.GREEN,   TextColor.ANSI.BLACK, TextColor.ANSI.WHITE,   TextColor.ANSI.GREEN),
@@ -111,7 +113,7 @@ public class Main {
         new Theme("Steel Blue",     TextColor.ANSI.WHITE,   TextColor.ANSI.BLACK, TextColor.ANSI.BLUE,    TextColor.ANSI.BLUE),
         new Theme("Ember",          TextColor.ANSI.RED,     TextColor.ANSI.WHITE, TextColor.ANSI.YELLOW,  TextColor.ANSI.YELLOW),
     };
-    static int currentTheme = 1; // Classic MC
+    static int currentTheme = 0; // Norton Commander
 
     // ─── Menu data ──────────────────────────────────────────────────────────────
 
@@ -156,7 +158,7 @@ public class Main {
                 TerminalSize sz          = screen.getTerminalSize();
                 int          W           = sz.getColumns();
                 int          H           = sz.getRows();
-                int          visibleRows = Math.max(0, H - 6); // menu bar + box chrome
+                int          visibleRows = Math.max(0, H - 7); // menu bar + box chrome + header row
 
                 left.adjustScroll(visibleRows);
                 right.adjustScroll(visibleRows);
@@ -858,25 +860,38 @@ public class Main {
                           int x, int w, int visibleRows, boolean active, int H, Theme t) {
         if (w <= 0) return;
 
-        final int SIZE_W = 5; // "<DIR>" and fmtSize() are always 5 chars
-        int nameW = Math.max(1, w - SIZE_W - 2);
-        int sepX  = x + nameW;
+        final int SIZE_W = 5;  // "<DIR>" and fmtSize() are always 5 chars
+        final int TIME_W = 11; // "MM/dd HH:mm"
+        int nameW = Math.max(1, w - SIZE_W - TIME_W - 2);
+        int sepX  = x + nameW;          // │ between name and size
+        int sep2X = sepX + 1 + SIZE_W;  // │ between size and time
 
-        // File list (rows 2..H-5)
+        // Header row (row 2)
+        g.setForegroundColor(TextColor.ANSI.YELLOW);
+        g.setBackgroundColor(TextColor.ANSI.DEFAULT);
+        g.putString(x,         2, pad(trunc(" Name", nameW), nameW));
+        g.putString(sepX,      2, "│");
+        g.putString(sepX + 1,  2, pad("Size", SIZE_W));
+        g.putString(sep2X,     2, "│");
+        g.putString(sep2X + 1, 2, pad("Modify time", TIME_W));
+
+        // File list (rows 3..H-5)
         for (int i = 0; i < visibleRows; i++) {
             int idx = i + panel.scroll;
-            int row = 2 + i;
+            int row = 3 + i;
 
-            // Separator runs through every row
+            // Separators run through every row
             g.setForegroundColor(t.border());
             g.setBackgroundColor(TextColor.ANSI.DEFAULT);
-            g.putString(sepX, row, "│");
+            g.putString(sepX,  row, "│");
+            g.putString(sep2X, row, "│");
 
             if (idx >= panel.entries.size()) {
                 g.setForegroundColor(TextColor.ANSI.DEFAULT);
                 g.setBackgroundColor(TextColor.ANSI.DEFAULT);
-                g.putString(x, row, pad("", nameW));
+                g.putString(x,        row, pad("", nameW));
                 g.putString(sepX + 1, row, pad("", SIZE_W));
+                g.putString(sep2X + 1,row, pad("", TIME_W));
                 continue;
             }
 
@@ -899,16 +914,19 @@ public class Main {
 
             String sizeCol = e.isDirectory() ? "<DIR>" : fmtSize(e.size());
             String display = e.isDirectory() ? "/" + e.name() : e.name();
-            g.putString(x, row, pad(trunc(" " + display, nameW), nameW));
-            g.putString(sepX + 1, row, sizeCol);
+            g.putString(x,         row, pad(trunc(" " + display, nameW), nameW));
+            g.putString(sepX + 1,  row, sizeCol);
+            g.putString(sep2X + 1, row, fmtTime(e.modified()));
         }
 
         // Column separator connectors at panel borders
         g.setForegroundColor(t.border());
         g.setBackgroundColor(TextColor.ANSI.DEFAULT);
-        if (w > SIZE_W + 2) {
-            g.putString(sepX, 1,     "╤"); // top border: ═ → ╤
-            g.putString(sepX, H - 4, "╧"); // middle border: ═ → ╧
+        if (w > SIZE_W + TIME_W + 4) {
+            g.putString(sepX,  1,     "╤"); // top border: ═ → ╤
+            g.putString(sepX,  H - 4, "╧"); // middle border: ═ → ╧
+            g.putString(sep2X, 1,     "╤");
+            g.putString(sep2X, H - 4, "╧");
         }
 
         // Path row (H-3, inside the 1-row sub-box)
@@ -1011,6 +1029,15 @@ public class Main {
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
+
+    static String fmtTime(long millis) {
+        if (millis == 0) return "           "; // 11 spaces for ".."
+        java.time.LocalDateTime dt = java.time.LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(millis), java.time.ZoneId.systemDefault());
+        int currentYear = java.time.LocalDate.now().getYear();
+        String pattern = dt.getYear() == currentYear ? "MM/dd HH:mm" : "MM/dd  yyyy";
+        return dt.format(java.time.format.DateTimeFormatter.ofPattern(pattern));
+    }
 
     static String fmtSize(long b) {
         if (b < 1_024)          return String.format("%4dB", b);

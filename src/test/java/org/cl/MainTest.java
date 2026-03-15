@@ -14,20 +14,21 @@ class MainTest {
     // ─── FileEntry ────────────────────────────────────────────────────────────
 
     @Test void fileEntry_file() {
-        var e = new Main.FileEntry("readme.txt", false, 42L);
+        var e = new Main.FileEntry("readme.txt", false, 42L, 1_000L);
         assertEquals("readme.txt", e.name());
         assertFalse(e.isDirectory());
         assertEquals(42L, e.size());
+        assertEquals(1_000L, e.modified());
     }
 
     @Test void fileEntry_directory() {
-        var e = new Main.FileEntry("subdir", true, 0L);
+        var e = new Main.FileEntry("subdir", true, 0L, 0L);
         assertTrue(e.isDirectory());
         assertEquals(0L, e.size());
     }
 
     @Test void fileEntry_zeroSizeFile() {
-        var e = new Main.FileEntry("empty.txt", false, 0L);
+        var e = new Main.FileEntry("empty.txt", false, 0L, 0L);
         assertFalse(e.isDirectory());
         assertEquals(0L, e.size());
     }
@@ -113,6 +114,18 @@ class MainTest {
         var p = new Main.Panel(dir);
         var file = p.entries.stream().filter(e -> e.name().equals("data.txt")).findFirst().orElseThrow();
         assertEquals(5L, file.size());
+    }
+
+    @Test void panel_load_modifiedTimeNonZero(@TempDir Path dir) throws IOException {
+        createFiles(dir, "t.txt");
+        var p = new Main.Panel(dir);
+        var file = p.entries.stream().filter(e -> e.name().equals("t.txt")).findFirst().orElseThrow();
+        assertTrue(file.modified() > 0);
+    }
+
+    @Test void panel_load_dotDotModifiedIsZero(@TempDir Path dir) {
+        var p = new Main.Panel(dir);
+        assertEquals(0L, p.entries.get(0).modified());
     }
 
     @Test void panel_load_cursorClampedOnReload(@TempDir Path dir) throws IOException {
@@ -380,6 +393,42 @@ class MainTest {
     @Test void trunc_max1_anyString()    { assertEquals("~",    Main.trunc("ab",    1)); }
     @Test void trunc_max1_singleChar()   { assertEquals("a",    Main.trunc("a",     1)); }
     @Test void trunc_emptyString()       { assertEquals("",     Main.trunc("",      5)); }
+
+    // ─── fmtTime ─────────────────────────────────────────────────────────────
+
+    @Test void fmtTime_zero_returnsSpaces() {
+        assertEquals("           ", Main.fmtTime(0));
+        assertEquals(11, Main.fmtTime(0).length());
+    }
+
+    @Test void fmtTime_pastYear_showsYear() {
+        long millis = java.time.LocalDateTime.of(2024, 6, 15, 14, 30)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli();
+        assertEquals("06/15  2024", Main.fmtTime(millis));
+    }
+
+    @Test void fmtTime_currentYear_showsTime() {
+        int year = java.time.LocalDate.now().getYear();
+        long millis = java.time.LocalDateTime.of(year, 6, 15, 14, 30)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli();
+        assertEquals("06/15 14:30", Main.fmtTime(millis));
+    }
+
+    @Test void fmtTime_alwaysElevenChars(@TempDir Path dir) throws IOException {
+        createFiles(dir, "x.txt");
+        var p = new Main.Panel(dir);
+        var file = p.entries.stream().filter(e -> e.name().equals("x.txt")).findFirst().orElseThrow();
+        assertEquals(11, Main.fmtTime(file.modified()).length());
+    }
+
+    @Test void fmtTime_pastYear_newYear() {
+        long millis = java.time.LocalDateTime.of(2000, 1, 1, 0, 0)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli();
+        assertEquals("01/01  2000", Main.fmtTime(millis));
+    }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
