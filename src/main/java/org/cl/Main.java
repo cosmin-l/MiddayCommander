@@ -932,7 +932,15 @@ public class Main {
         // Path row (H-3, inside the 1-row sub-box)
         g.setForegroundColor(active ? t.accentFg() : TextColor.ANSI.WHITE);
         g.setBackgroundColor(active ? t.accent()    : TextColor.ANSI.DEFAULT);
-        g.putString(x, H - 3, pad(trunc(" " + panel.path, w), w));
+        String diskInfo = "";
+        try {
+            java.nio.file.FileStore fs = Files.getFileStore(panel.path);
+            long total = fs.getTotalSpace();
+            long used  = total - fs.getUsableSpace();
+            diskInfo = fmtSize(used) + " / " + fmtSize(total);
+        } catch (IOException ignored) {}
+        int pathW = w - diskInfo.length();
+        g.putString(x, H - 3, pad(trunc(" " + panel.path, pathW), pathW) + diskInfo);
 
         g.setForegroundColor(TextColor.ANSI.DEFAULT);
         g.setBackgroundColor(TextColor.ANSI.DEFAULT);
