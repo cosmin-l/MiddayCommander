@@ -7,6 +7,7 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -128,6 +129,11 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         Terminal terminal = new DefaultTerminalFactory().setTerminalEmulatorTitle("Midday Commander").createTerminal();
+        if (terminal instanceof SwingTerminalFrame f) {
+            java.awt.Dimension sz = f.getSize();
+            f.setSize((int)(sz.width * 1.3), (int)(sz.height * 1.3));
+            f.setLocationRelativeTo(null);
+        }
         Screen screen = new TerminalScreen(terminal);
         screen.startScreen();
         screen.setCursorPosition(null);
