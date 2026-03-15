@@ -1,4 +1,4 @@
-package com.example;
+package org.cl;
 
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -127,7 +127,7 @@ public class Main {
     // ─── Entry point ────────────────────────────────────────────────────────────
 
     public static void main(String[] args) throws IOException {
-        Terminal terminal = new DefaultTerminalFactory().createTerminal();
+        Terminal terminal = new DefaultTerminalFactory().setTerminalEmulatorTitle("Midday Commander").createTerminal();
         Screen screen = new TerminalScreen(terminal);
         screen.startScreen();
         screen.setCursorPosition(null);
@@ -838,7 +838,7 @@ public class Main {
         // Status bar
         g.setForegroundColor(t.accentFg());
         g.setBackgroundColor(t.accent());
-        g.putString(0, H - 1, pad("  Tab:Switch  Enter:Open  F3:View  F4:Edit  F5:Copy  F6:Move  F7:MkDir  F8:Delete  F9:Menu  Q:Quit", W));
+        g.putString(0, H - 1, pad("  Tab:Switch  F3:View  F4:Edit  F5:Copy  F6:Move  F7:MkDir  F8:Delete  F9:Menu  Q:Quit", W));
         g.setForegroundColor(TextColor.ANSI.DEFAULT);
         g.setBackgroundColor(TextColor.ANSI.DEFAULT);
 

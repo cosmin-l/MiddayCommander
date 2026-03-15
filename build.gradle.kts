@@ -3,7 +3,7 @@ plugins {
     application
 }
 
-group = "com.example"
+group = "org.cl"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -12,6 +12,12 @@ repositories {
 
 dependencies {
     implementation("com.googlecode.lanterna:lanterna:3.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {
@@ -20,7 +26,7 @@ java {
 }
 
 application {
-    mainClass = "com.example.Main"
+    mainClass = "org.cl.Main"
 }
 
 tasks.named<JavaExec>("run") {
