@@ -10,6 +10,8 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -271,10 +273,14 @@ public class Main {
         Path srcPath = src.path.resolve(e.name());
         Path dstPath = dst.path.resolve(e.name());
         try {
+            long   total     = countBytes(srcPath);
+            long[] bytesDone = {0};
             if (e.isDirectory()) {
-                copyDirectory(srcPath, dstPath);
+                copyDirectoryWithProgress(srcPath, dstPath, bytesDone, total,
+                        screen, " Copy ", src.path, dst.path, W, H);
             } else {
-                Files.copy(srcPath, dstPath, StandardCopyOption.REPLACE_EXISTING);
+                copyFileChunked(srcPath, dstPath, bytesDone, total,
+                        screen, " Copy ", e.name(), src.path, dst.path, W, H);
             }
             dst.load();
         } catch (IOException ex) {
@@ -282,7 +288,47 @@ public class Main {
         }
     }
 
-    static void copyDirectory(Path src, Path dst) throws IOException {
+    static long countBytes(Path path) throws IOException {
+        if (Files.isRegularFile(path)) return Files.size(path);
+        long[] total = {0};
+        Files.walkFileTree(path, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                total[0] += attrs.size();
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return total[0];
+    }
+
+    static void copyFileChunked(Path src, Path dst,
+                                 long[] bytesDone, long total,
+                                 Screen screen, String opTitle, String filename,
+                                 Path fromDir, Path toDir, int W, int H) throws IOException {
+        byte[] buf         = new byte[65536];
+        long   lastRefresh = 0;
+        try (InputStream  in  = Files.newInputStream(src);
+             OutputStream out = Files.newOutputStream(dst,
+                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                out.write(buf, 0, n);
+                bytesDone[0] += n;
+                long now = System.currentTimeMillis();
+                if (now - lastRefresh >= 80) {
+                    drawProgressDialog(screen, opTitle, filename, fromDir, toDir,
+                            bytesDone[0], total, W, H);
+                    lastRefresh = now;
+                }
+            }
+        }
+        drawProgressDialog(screen, opTitle, filename, fromDir, toDir, bytesDone[0], total, W, H);
+    }
+
+    static void copyDirectoryWithProgress(Path src, Path dst,
+                                           long[] bytesDone, long total,
+                                           Screen screen, String opTitle,
+                                           Path fromDir, Path toDir, int W, int H) throws IOException {
         Files.walkFileTree(src, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -291,7 +337,9 @@ public class Main {
             }
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.copy(file, dst.resolve(src.relativize(file)), StandardCopyOption.REPLACE_EXISTING);
+                copyFileChunked(file, dst.resolve(src.relativize(file)),
+                        bytesDone, total, screen, opTitle,
+                        file.getFileName().toString(), fromDir, toDir, W, H);
                 return FileVisitResult.CONTINUE;
             }
         });
@@ -320,8 +368,15 @@ public class Main {
         } catch (AtomicMoveNotSupportedException ex) {
             // Cross-device move: copy then delete
             try {
-                if (e.isDirectory()) copyDirectory(srcPath, dstPath);
-                else Files.copy(srcPath, dstPath, StandardCopyOption.REPLACE_EXISTING);
+                long   total     = countBytes(srcPath);
+                long[] bytesDone = {0};
+                if (e.isDirectory()) {
+                    copyDirectoryWithProgress(srcPath, dstPath, bytesDone, total,
+                            screen, " Move ", src.path, dst.path, W, H);
+                } else {
+                    copyFileChunked(srcPath, dstPath, bytesDone, total,
+                            screen, " Move ", e.name(), src.path, dst.path, W, H);
+                }
                 deleteRecursive(srcPath);
                 src.load();
                 dst.load();
@@ -655,6 +710,41 @@ public class Main {
         } catch (IOException ex) {
             showMessageDialog(screen, " Error ", ex.getMessage(), W, H);
         }
+    }
+
+    // ─── Progress dialog ────────────────────────────────────────────────────────
+
+    static void drawProgressDialog(Screen screen, String title,
+                                    String currentFile, Path fromDir, Path toDir,
+                                    long done, long total, int W, int H) throws IOException {
+        int dw   = Math.min(W - 4, 64);
+        int dh   = 9;
+        int dx   = (W - dw) / 2;
+        int dy   = (H - dh) / 2;
+        int barW = dw - 4;
+
+        TextGraphics g = screen.newTextGraphics();
+        drawBox(g, dx, dy, dw, dh, title, TextColor.ANSI.WHITE, TextColor.ANSI.BLUE);
+
+        g.setForegroundColor(TextColor.ANSI.WHITE);
+        g.setBackgroundColor(TextColor.ANSI.BLUE);
+        g.putString(dx + 2, dy + 2, trunc(currentFile,            dw - 4));
+        g.putString(dx + 2, dy + 3, "From: " + trunc(fromDir.toString(), dw - 8));
+        g.putString(dx + 2, dy + 4, "  To: " + trunc(toDir.toString(),   dw - 8));
+
+        int pct    = total > 0 ? (int)(done * 100 / total) : 100;
+        int filled = total > 0 ? (int)((long)done * barW / total) : barW;
+        filled = Math.min(Math.max(filled, 0), barW);
+
+        g.setForegroundColor(TextColor.ANSI.CYAN);
+        g.setBackgroundColor(TextColor.ANSI.BLUE);
+        g.putString(dx + 2, dy + 6, "█".repeat(filled) + "░".repeat(barW - filled));
+
+        String info = String.format("%3d%%  %s / %s", pct, fmtSize(done), fmtSize(total));
+        g.setForegroundColor(TextColor.ANSI.YELLOW);
+        g.putString(dx + 2, dy + 7, trunc(info, dw - 4));
+
+        screen.refresh();
     }
 
     // ─── Dialogs ────────────────────────────────────────────────────────────────
