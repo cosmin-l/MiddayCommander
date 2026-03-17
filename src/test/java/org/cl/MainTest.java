@@ -1,5 +1,8 @@
 package org.cl;
 
+import com.googlecode.lanterna.screen.Screen;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -266,61 +269,167 @@ class MainTest {
         assertEquals(before, p.path);
     }
 
-    // ─── copyDirectory ────────────────────────────────────────────────────────
+    // ─── countBytes ──────────────────────────────────────────────────────────
 
-    @Test void copyDirectory_flatFiles(@TempDir Path tmp) throws IOException {
+    @Test void countBytes_singleFile(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("f.txt"), "hello");
+        assertEquals(5L, Main.countBytes(dir.resolve("f.txt")));
+    }
+
+    @Test void countBytes_emptyFile(@TempDir Path dir) throws IOException {
+        Files.createFile(dir.resolve("empty.txt"));
+        assertEquals(0L, Main.countBytes(dir.resolve("empty.txt")));
+    }
+
+    @Test void countBytes_directory(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("a.txt"), "abc");   // 3 bytes
+        Files.writeString(dir.resolve("b.txt"), "de");    // 2 bytes
+        assertEquals(5L, Main.countBytes(dir));
+    }
+
+    @Test void countBytes_nestedDirectory(@TempDir Path dir) throws IOException {
+        Path sub = Files.createDirectory(dir.resolve("sub"));
+        Files.writeString(dir.resolve("root.txt"), "12345");   // 5 bytes
+        Files.writeString(sub.resolve("leaf.txt"), "678");     // 3 bytes
+        assertEquals(8L, Main.countBytes(dir));
+    }
+
+    @Test void countBytes_emptyDirectory(@TempDir Path dir) throws IOException {
+        assertEquals(0L, Main.countBytes(dir));
+    }
+
+    // ─── copyFileChunked ─────────────────────────────────────────────────────
+
+    @Test void copyFileChunked_copiesContent(@TempDir Path tmp) throws IOException {
+        Path src = Files.writeString(tmp.resolve("src.txt"), "hello world");
+        Path dst = tmp.resolve("dst.txt");
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyFileChunked(src, dst, done, 11L, s, " Copy ", "src.txt", tmp, tmp, 80, 24);
+        }
+        assertEquals("hello world", Files.readString(dst));
+        assertEquals(11L, done[0]);
+    }
+
+    @Test void copyFileChunked_overwritesExisting(@TempDir Path tmp) throws IOException {
+        Path src = Files.writeString(tmp.resolve("src.txt"), "new");
+        Path dst = Files.writeString(tmp.resolve("dst.txt"), "old content");
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyFileChunked(src, dst, done, 3L, s, " Copy ", "src.txt", tmp, tmp, 80, 24);
+        }
+        assertEquals("new", Files.readString(dst));
+    }
+
+    @Test void copyFileChunked_emptyFile(@TempDir Path tmp) throws IOException {
+        Path src = Files.createFile(tmp.resolve("empty.txt"));
+        Path dst = tmp.resolve("dst.txt");
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyFileChunked(src, dst, done, 0L, s, " Copy ", "empty.txt", tmp, tmp, 80, 24);
+        }
+        assertEquals(0L, Files.size(dst));
+        assertEquals(0L, done[0]);
+    }
+
+    @Test void copyFileChunked_accumulates_bytesDone(@TempDir Path tmp) throws IOException {
+        Path src = Files.writeString(tmp.resolve("a.txt"), "abc");
+        Path dst = tmp.resolve("b.txt");
+        long[] done = {7L}; // pre-existing offset
+        try (Screen s = virtualScreen()) {
+            Main.copyFileChunked(src, dst, done, 10L, s, " Copy ", "a.txt", tmp, tmp, 80, 24);
+        }
+        assertEquals(10L, done[0]); // 7 + 3
+    }
+
+    // ─── copyDirectoryWithProgress ────────────────────────────────────────────
+
+    @Test void copyDirectoryWithProgress_flatFiles(@TempDir Path tmp) throws IOException {
         Path src = Files.createDirectory(tmp.resolve("src"));
         Path dst = Files.createDirectory(tmp.resolve("dst"));
         Files.writeString(src.resolve("a.txt"), "alpha");
         Files.writeString(src.resolve("b.txt"), "beta");
 
-        Main.copyDirectory(src, dst);
+        long total = Main.countBytes(src);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, total, s, " Copy ", src, dst, 80, 24);
+        }
 
         assertEquals("alpha", Files.readString(dst.resolve("a.txt")));
         assertEquals("beta",  Files.readString(dst.resolve("b.txt")));
     }
 
-    @Test void copyDirectory_nestedDirectories(@TempDir Path tmp) throws IOException {
-        Path src   = Files.createDirectory(tmp.resolve("src"));
-        Path sub   = Files.createDirectory(src.resolve("sub"));
-        Path deep  = Files.createDirectory(sub.resolve("deep"));
+    @Test void copyDirectoryWithProgress_nestedDirectories(@TempDir Path tmp) throws IOException {
+        Path src  = Files.createDirectory(tmp.resolve("src"));
+        Path sub  = Files.createDirectory(src.resolve("sub"));
+        Path deep = Files.createDirectory(sub.resolve("deep"));
         Files.writeString(deep.resolve("leaf.txt"), "leaf");
 
         Path dst = tmp.resolve("dst");
-        Main.copyDirectory(src, dst);
+        long total = Main.countBytes(src);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, total, s, " Copy ", src, dst, 80, 24);
+        }
 
         assertTrue(Files.isDirectory(dst.resolve("sub").resolve("deep")));
         assertEquals("leaf", Files.readString(dst.resolve("sub").resolve("deep").resolve("leaf.txt")));
     }
 
-    @Test void copyDirectory_overwritesExistingFiles(@TempDir Path tmp) throws IOException {
+    @Test void copyDirectoryWithProgress_overwritesExistingFiles(@TempDir Path tmp) throws IOException {
         Path src = Files.createDirectory(tmp.resolve("src"));
         Path dst = Files.createDirectory(tmp.resolve("dst"));
         Files.writeString(src.resolve("f.txt"), "new");
         Files.writeString(dst.resolve("f.txt"), "old");
 
-        Main.copyDirectory(src, dst);
+        long total = Main.countBytes(src);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, total, s, " Copy ", src, dst, 80, 24);
+        }
 
         assertEquals("new", Files.readString(dst.resolve("f.txt")));
     }
 
-    @Test void copyDirectory_preservesFileContents(@TempDir Path tmp) throws IOException {
+    @Test void copyDirectoryWithProgress_preservesFileContents(@TempDir Path tmp) throws IOException {
         Path src = Files.createDirectory(tmp.resolve("src"));
         String content = "line1\nline2\nline3";
         Files.writeString(src.resolve("multi.txt"), content);
 
         Path dst = tmp.resolve("dst");
-        Main.copyDirectory(src, dst);
+        long total = Main.countBytes(src);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, total, s, " Copy ", src, dst, 80, 24);
+        }
 
         assertEquals(content, Files.readString(dst.resolve("multi.txt")));
     }
 
-    @Test void copyDirectory_emptySource(@TempDir Path tmp) throws IOException {
+    @Test void copyDirectoryWithProgress_emptySource(@TempDir Path tmp) throws IOException {
         Path src = Files.createDirectory(tmp.resolve("src"));
         Path dst = tmp.resolve("dst");
-        Main.copyDirectory(src, dst);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, 0L, s, " Copy ", src, dst, 80, 24);
+        }
         assertTrue(Files.isDirectory(dst));
         assertEquals(0, Files.list(dst).count());
+    }
+
+    @Test void copyDirectoryWithProgress_bytesDoneEqualsTotal(@TempDir Path tmp) throws IOException {
+        Path src = Files.createDirectory(tmp.resolve("src"));
+        Files.writeString(src.resolve("a.txt"), "abc");
+        Files.writeString(src.resolve("b.txt"), "de");
+
+        Path dst = tmp.resolve("dst");
+        long total = Main.countBytes(src);
+        long[] done = {0};
+        try (Screen s = virtualScreen()) {
+            Main.copyDirectoryWithProgress(src, dst, done, total, s, " Copy ", src, dst, 80, 24);
+        }
+        assertEquals(total, done[0]);
     }
 
     // ─── deleteRecursive ─────────────────────────────────────────────────────
@@ -440,5 +549,12 @@ class MainTest {
         for (int i = 0; i < p.entries.size(); i++)
             if (p.entries.get(i).name().equals(name)) return i;
         throw new AssertionError("Entry not found: " + name);
+    }
+
+    private static Screen virtualScreen() throws IOException {
+        Screen s = new TerminalScreen(new DefaultVirtualTerminal(
+                new com.googlecode.lanterna.TerminalSize(80, 24)));
+        s.startScreen();
+        return s;
     }
 }
